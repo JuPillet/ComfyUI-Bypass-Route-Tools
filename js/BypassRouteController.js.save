@@ -2,12 +2,6 @@ import { app } from "../../scripts/app.js";
 
 const NODE_NAME = "BypassRouteController";
 
-// Dispatched on `window` whenever a Controller node's own title changes
-// (renamed via the canvas title bar). BypassRouteSwitcher.js listens for
-// this to refresh its controller dropdown — no polling involved. Must match
-// the identical string literal in BypassRouteSwitcher.js.
-const CONTROLLER_RENAMED_EVENT = "bypass-route-tools:controller-renamed";
-
 // Fraction (from the left) of the group widget considered the
 // "name zone": a click here opens inline renaming. The rest (on the
 // right, where the "Bypass"/"Active" text is shown) toggles the active group.
@@ -571,24 +565,6 @@ app.registerExtension({
       _onCreated?.apply(this, arguments);
       const node = this;
       node.__state = { activeIndex: 0, inverted: false, groups: [] };
-
-      // Reacts to renames of the Controller node itself, with no polling:
-      // LiteGraph's native title-rename UI ultimately performs a plain
-      // `node.title = newValue` assignment (whichever path the user used —
-      // double-clicking the title bar, an inline editor, etc.), so shadowing
-      // `title` with a getter/setter lets us react to that write the instant
-      // it happens and broadcast it for any Switcher to pick up.
-      let _title = node.title;
-      Object.defineProperty(node, "title", {
-        configurable: true,
-        enumerable: true,
-        get() { return _title; },
-        set(value) {
-          if (_title === value) return;
-          _title = value;
-          window.dispatchEvent(new CustomEvent(CONTROLLER_RENAMED_EVENT));
-        },
-      });
 
       for (const w of (node.widgets || [])) {
         if (["active_index", "inverted"].includes(w.name)) {

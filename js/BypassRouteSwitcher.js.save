@@ -3,9 +3,6 @@ import { app } from "../../scripts/app.js";
 const NODE_NAME       = "BypassRouteSwitcher";
 const CONTROLLER_TYPE = "BypassRouteController";
 
-// Must match the identical string literal in BypassRouteController.js.
-const CONTROLLER_RENAMED_EVENT = "bypass-route-tools:controller-renamed";
-
 // ─── Module-Level Helpers ─────────────────────────────────────────────────
 
 /** Returns the list of controllers present in the graph. */
@@ -29,14 +26,7 @@ function refreshAllSwitchers() {
             n.controllerWidget.options.values = list;
 
             if (!list.includes(n.controllerWidget.value)) {
-                // The exact display string (it embeds the controller's title)
-                // can go stale right after a rename even though the same
-                // controller still exists — re-match it by id before falling
-                // back to the first entry, so renaming a controller doesn't
-                // silently switch the Switcher to a different one.
-                const match = n.controllerWidget.value?.match(/id:(\d+)/);
-                const stillThere = match && list.find(v => v.endsWith(`(id:${match[1]})`));
-                n.controllerWidget.value = stillThere || list[0];
+                n.controllerWidget.value = list[0];
             }
 
             n.setDirtyCanvas?.(true, false);
@@ -49,11 +39,6 @@ app.registerExtension({
     name: `BypassRouteTools.${NODE_NAME}`,
 
     setup() {
-        // The Controller broadcasts this event the instant its own title
-        // changes (see the `Object.defineProperty` on `node.title` in
-        // BypassRouteController.js) — no interval, no polling.
-        window.addEventListener(CONTROLLER_RENAMED_EVENT, refreshAllSwitchers);
-
         const _onNodeAdded = app.graph.onNodeAdded;
         app.graph.onNodeAdded = function (node) {
             _onNodeAdded?.call(this, node);
@@ -65,6 +50,14 @@ app.registerExtension({
             _onNodeRemoved?.call(this, node);
             if (node.type === CONTROLLER_TYPE) refreshAllSwitchers();
         };
+
+        if ("onNodeTitleChanged" in app.graph) {
+            const _onTitleChanged = app.graph.onNodeTitleChanged;
+            app.graph.onNodeTitleChanged = function (node) {
+                _onTitleChanged?.call(this, node);
+                if (node.type === CONTROLLER_TYPE) refreshAllSwitchers();
+            };
+        }
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
