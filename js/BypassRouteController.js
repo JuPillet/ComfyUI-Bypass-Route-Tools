@@ -36,6 +36,20 @@ function setInverted(node, value) {
   if (w) w.value = value;
 }
 
+/**
+ * Grows the node if its content no longer fits, but never shrinks it back
+ * down — so a size the user picked by dragging the resize handle survives
+ * adding/removing/renaming groups and nodes instead of being reset every time.
+ */
+function resizeToFitContent(node) {
+  const natural = node.computeSize();
+  const current = node.size;
+  node.setSize([
+    Math.max(current[0], natural[0]),
+    Math.max(current[1], natural[1]),
+  ]);
+}
+
 function isConflict(nodeId, controllerNode) {
   const { activeIndex, groups } = getState(controllerNode);
   const inActive = (groups[activeIndex]?.nodes || []).includes(nodeId);
@@ -168,7 +182,7 @@ function rebuildGroupWidgets(node) {
 
   node.widgets = perm;
   applyBypassAndValues(node);
-  node.setSize(node.computeSize());
+  resizeToFitContent(node);
 }
 
 function syncNodeTitles(node) {

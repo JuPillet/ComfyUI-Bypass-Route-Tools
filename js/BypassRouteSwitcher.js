@@ -43,6 +43,20 @@ function refreshAllSwitchers() {
         });
 }
 
+/**
+ * Grows the node if its content no longer fits, but never shrinks it back
+ * down — so a size the user picked by dragging the resize handle survives
+ * the input slots changing instead of being reset every time.
+ */
+function resizeToFitContent(node) {
+    const natural = node.computeSize();
+    const current = node.size;
+    node.setSize([
+        Math.max(current[0], natural[0]),
+        Math.max(current[1], natural[1]),
+    ]);
+}
+
 // ─── ComfyUI Extension ────────────────────────────────────────────────────────
 
 app.registerExtension({
@@ -163,7 +177,7 @@ app.registerExtension({
 
             if (changed) {
                 this.updateIndexWidgetLimit(groupNames.length);
-                this.setSize(this.computeSize());
+                resizeToFitContent(this);
                 this.setDirtyCanvas(true, true);
             }
         };
