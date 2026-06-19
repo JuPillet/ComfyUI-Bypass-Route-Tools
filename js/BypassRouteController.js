@@ -29,6 +29,13 @@ function getState(node) {
   return node.__state;
 }
 
+/** Sets `inverted` and keeps the visible "Inverted"/"Normal" toggle widget in sync. */
+function setInverted(node, value) {
+  getState(node).inverted = value;
+  const w = (node.widgets || []).find(w => w.name === "inverted");
+  if (w) w.value = value;
+}
+
 function isConflict(nodeId, controllerNode) {
   const { activeIndex, groups } = getState(controllerNode);
   const inActive = (groups[activeIndex]?.nodes || []).includes(nodeId);
@@ -104,8 +111,18 @@ function rebuildGroupWidgets(node) {
         return;
       }
 
-      // Click on the toggle zone (right side): this group becomes the active group
-      getState(node).activeIndex = gw.__groupIndex;
+      const s = getState(node);
+      if (s.groups.length === 1) {
+        // With a single group there's no "other" group to switch away
+        // from, so just re-selecting it would be a no-op and its state
+        // would stay stuck. Flip its Bypass/Active state directly instead
+        // — equivalent to flipping Inverted, since with one group they're
+        // the same thing, but without forcing a trip through that widget.
+        setInverted(node, !s.inverted);
+      } else {
+        // Click on the toggle zone (right side): this group becomes the active group
+        s.activeIndex = gw.__groupIndex;
+      }
       applyBypassAndValues(node);
       notifySwitchers(node);
     };
@@ -597,8 +614,14 @@ app.registerExtension({
         }
       }
 
-      node.addWidget("toggle", "inverted", false, (v) => {
-        getState(node).inverted = v;
+      node.addWidget("toggle", "inverted", false, () => {
+        // Don't trust the value LiteGraph auto-flips internally on this
+        // widget — if `inverted` was changed elsewhere (e.g. clicking a
+        // single group's row toggles it directly too), LiteGraph's own
+        // tracked value can fall out of sync with our actual state, making
+        // the next click here look like it does nothing. Always flip from
+        // our own state instead, so this always inverts immediately.
+        setInverted(node, !getState(node).inverted);
         applyBypassAndValues(node);
       }, { on: "Inverted", off: "Normal" });
 
