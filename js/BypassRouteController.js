@@ -37,16 +37,25 @@ function setInverted(node, value) {
 }
 
 /**
- * Grows the node if its content no longer fits, but never shrinks it back
- * down — so a size the user picked by dragging the resize handle survives
- * adding/removing/renaming groups and nodes instead of being reset every time.
+ * Keeps the node's size in sync with its content after every change:
+ * width is preserved (or grown if it no longer fits, but never shrunk back
+ * down — so a width the user picked by dragging survives), while height is
+ * always recomputed to exactly match the current content, so it shrinks
+ * immediately on any removal (group, node, etc.) instead of leaving empty
+ * space, and grows immediately when content is added.
  */
 function resizeToFitContent(node) {
+  const currentWidth = node.size[0];
+  // `computeSize()` can return max(current size, natural size) in some
+  // LiteGraph versions instead of the true minimum — meaning it never
+  // reports a smaller height once the node has been made taller. Shrinking
+  // the node first means there's nothing left for it to anchor to, so the
+  // recomputed value reflects only the widgets actually present right now.
+  node.size = [currentWidth, 1];
   const natural = node.computeSize();
-  const current = node.size;
   node.setSize([
-    Math.max(current[0], natural[0]),
-    Math.max(current[1], natural[1]),
+    Math.max(currentWidth, natural[0]),
+    natural[1],
   ]);
 }
 
@@ -147,22 +156,17 @@ function rebuildGroupWidgets(node) {
       const baseName = tn?.title || tn?.type || `Node ${nodeId}`;
       const name = baseName.substring(0, 28);
       const conf = isConflict(nodeId, node);
-      const label = `  ${conf ? "⚠ " : ""}${name}  ×`;
+      const label = `  ${conf ? "⚠ " : ""}${name}`;
 
       const nw = {
         name: label, type: "button", value: null,
         __isNodeWidget: true, __nodeGroupIdx: idx, __nodeIdx: ni,
         __nodeId: nodeId, __lastTitle: baseName
       };
-      nw.callback = () => {
-        const s = getState(node);
-        if (s.groups[idx]) {
-          s.groups[idx].nodes.splice(ni, 1);
-          applyBypassAndValues(node);
-          rebuildGroupWidgets(node);
-          notifySwitchers(node);
-        }
-      };
+      // Left-click is intentionally inert: right-click → Move Up / Move
+      // Down / Remove Node is now the only way to act on a node row, so a
+      // stray click no longer silently removes it from the group.
+      nw.callback = () => {};
       groupWidgets.push(nw);
     });
 
@@ -195,7 +199,7 @@ function syncNodeTitles(node) {
         if (w.__lastTitle !== currentName) {
           w.__lastTitle = currentName;
           const conf = isConflict(w.__nodeId, node);
-          w.name = `  ${conf ? "⚠ " : ""}${currentName.substring(0, 28)}  ×`;
+          w.name = `  ${conf ? "⚠ " : ""}${currentName.substring(0, 28)}`;
           changed = true;
         }
       }
@@ -242,6 +246,27 @@ function moveGroup(node, groupIdx, direction) {
   if (state.activeIndex === groupIdx) state.activeIndex = newIdx;
   else if (state.activeIndex === newIdx) state.activeIndex = groupIdx;
 
+  rebuildGroupWidgets(node);
+  notifySwitchers(node);
+}
+
+function removeNodeFromGroup(node, groupIdx, nodeIdx) {
+  const state = getState(node);
+  const group = state.groups[groupIdx];
+  if (!group) return;
+  group.nodes.splice(nodeIdx, 1);
+  applyBypassAndValues(node);
+  rebuildGroupWidgets(node);
+  notifySwitchers(node);
+}
+
+function moveNodeInGroup(node, groupIdx, nodeIdx, direction) {
+  const state = getState(node);
+  const group = state.groups[groupIdx];
+  if (!group) return;
+  const newIdx = nodeIdx + direction;
+  if (newIdx < 0 || newIdx >= group.nodes.length) return;
+  [group.nodes[nodeIdx], group.nodes[newIdx]] = [group.nodes[newIdx], group.nodes[nodeIdx]];
   rebuildGroupWidgets(node);
   notifySwitchers(node);
 }
@@ -571,6 +596,9 @@ app.registerExtension({
       if (hovered?.__isGroupWidget) {
         return { widget: hovered, output: { type: "GROUP" } };
       }
+      if (hovered?.__isNodeWidget) {
+        return { widget: hovered, output: { type: "GROUP_NODE" } };
+      }
       return null;
     };
 
@@ -592,6 +620,24 @@ app.registerExtension({
           null,
           { content: "🗑️ Remove group", callback: () => removeGroup(this, idx) }
         ], { event: _lastMouseEvent, title: state.groups[idx]?.name });
+        return null;
+      }
+
+      if (slot?.widget?.__isNodeWidget) {
+        const w = slot.widget;
+        const groupIdx = w.__nodeGroupIdx;
+        const nodeIdx = w.__nodeIdx;
+        const group = getState(this).groups[groupIdx];
+        if (!group) return null;
+        const isFirst = nodeIdx === 0;
+        const isLast = nodeIdx === group.nodes.length - 1;
+
+        new LiteGraph.ContextMenu([
+          { content: "⬆ Move Up", disabled: isFirst, callback: () => moveNodeInGroup(this, groupIdx, nodeIdx, -1) },
+          { content: "⬇ Move Down", disabled: isLast, callback: () => moveNodeInGroup(this, groupIdx, nodeIdx, 1) },
+          null,
+          { content: "🗑️ Remove Node", callback: () => removeNodeFromGroup(this, groupIdx, nodeIdx) }
+        ], { event: _lastMouseEvent, title: w.__lastTitle });
         return null;
       }
       return _getSlotMenuOptions?.call(this, slot) ?? null;

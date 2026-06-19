@@ -44,16 +44,19 @@ function refreshAllSwitchers() {
 }
 
 /**
- * Grows the node if its content no longer fits, but never shrinks it back
- * down — so a size the user picked by dragging the resize handle survives
- * the input slots changing instead of being reset every time.
+ * Keeps the node's size in sync with its content after every change:
+ * width is preserved (or grown if it no longer fits, but never shrunk back
+ * down — so a width the user picked by dragging survives), while height is
+ * always recomputed to exactly match the current content, so it shrinks
+ * immediately on any removal (input slot, etc.) instead of leaving empty
+ * space, and grows immediately when content is added.
  */
 function resizeToFitContent(node) {
     const natural = node.computeSize();
     const current = node.size;
     node.setSize([
         Math.max(current[0], natural[0]),
-        Math.max(current[1], natural[1]),
+        natural[1],
     ]);
 }
 
