@@ -93,11 +93,74 @@ function applyBypassAndValues(node) {
   app.graph.setDirtyCanvas(true, true);
 }
 
+const GROUP_BYPASS_COLOR = "#6b3fa0"; // purple
+const GROUP_ACTIVE_COLOR = "#2e7d32"; // green
+
+/**
+ * Custom row renderer for group toggle widgets only (never node-in-group
+ * rows), so the active/bypassed state of a group is visible at a glance —
+ * purple = Bypass, green = Active. `draw` is independent from `mouse`/click
+ * handling in LiteGraph's widget API, so this only changes how the row
+ * looks; the existing click logic (rename zone, toggle, double-click) is
+ * untouched.
+ */
+function drawGroupToggle(ctx, node, widgetWidth, posY, H) {
+  const margin = 15;
+  const innerW = widgetWidth - margin * 2;
+  const bypassed = !!this.value;
+  const bg = bypassed ? GROUP_BYPASS_COLOR : GROUP_ACTIVE_COLOR;
+
+  ctx.save();
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(margin, posY, innerW, H, H * 0.5);
+  else ctx.rect(margin, posY, innerW, H);
+  ctx.fill();
+
+  // Mini toggle-switch indicator (track + knob) + state label, on the
+  // RIGHT — same side LiteGraph's native toggle widgets use (e.g. the
+  // "Inverted" widget below), so this still reads as a toggle in the
+  // expected spot rather than a button on the wrong side.
+  const swW = 26, swH = 13;
+  const swX = margin + innerW - swW - 10;
+  const swY = posY + (H - swH) / 2;
+
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(swX, swY, swW, swH, swH * 0.5);
+  else ctx.rect(swX, swY, swW, swH);
+  ctx.fill();
+
+  const knobR = swH * 0.5 - 1.5;
+  const knobX = bypassed ? swX + swW - knobR - 1.5 : swX + knobR + 1.5;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(knobX, swY + swH * 0.5, knobR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // State label, just to the left of the switch
+  ctx.font = "bold 11px Arial";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fff";
+  const stateLabel = bypassed ? (this.options?.on || "Bypass") : (this.options?.off || "Active");
+  const labelX = swX - 8;
+  ctx.fillText(stateLabel, labelX, posY + H / 2);
+
+  // Group name on the left, truncated before it reaches the right-side block
+  const labelWidth = ctx.measureText(stateLabel).width;
+  const nameLimit = labelX - labelWidth - 14 - (margin + 10);
+  ctx.font = "12px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(this.name || "", margin + 10, posY + H / 2, Math.max(10, nameLimit));
+  ctx.restore();
+}
+
 function rebuildGroupWidgets(node) {
   const state = getState(node);
 
   const perm = (node.widgets || []).filter(w =>
-    !w.__isGroupWidget && !w.__isNodeWidget && !w.__isAddNodeWidget
+    !w.__isGroupWidget && !w.__isNodeWidget && !w.__isAddNodeWidget && !w.__isSpacerWidget
   );
 
   const groupWidgets = [];
@@ -114,6 +177,7 @@ function rebuildGroupWidgets(node) {
       __isGroupWidget: true,
       __groupIndex: idx,
     };
+    gw.draw = drawGroupToggle;
     
     // ── Click on the name = inline rename / Click on the toggle = switch active ──
     // NOTE: the previous code compared `pos[0]` (an absolute coordinate in
@@ -179,6 +243,17 @@ function rebuildGroupWidgets(node) {
     };
     groupWidgets.push(aw);
   });
+
+  // A bit of breathing room between the last group's "+ Add Node" button
+  // and "+ New Group" below, so they don't visually run into each other.
+  if (groupWidgets.length > 0) {
+    groupWidgets.push({
+      name: "", type: "spacer", value: null,
+      __isSpacerWidget: true,
+      computeSize: () => [0, 10],
+      draw: () => {},
+    });
+  }
 
   const newGroupIdx = perm.findIndex(w => w.name === "➕ New Group");
   if (newGroupIdx >= 0) perm.splice(newGroupIdx, 0, ...groupWidgets);
@@ -640,6 +715,36 @@ app.registerExtension({
         ], { event: _lastMouseEvent, title: w.__lastTitle });
         return null;
       }
+
+      // A real graph slot (the `selected_index` output), not one of our
+      // custom widgets. Simply defining `getSlotMenuOptions` at all makes
+      // LiteGraph use only what we return here instead of falling back to
+      // its own built-in slot menu — so "Rename Slot" / "Disconnect Links"
+      // have to be rebuilt by hand here, or they silently disappear.
+      if (slot?.output && !slot?.widget) {
+        const outputSlot = slot.output;
+        const slotIndex = slot.slot ?? this.outputs?.indexOf(outputSlot) ?? 0;
+        const hasLinks = !!(outputSlot.links && outputSlot.links.length);
+
+        const items = [];
+        if (hasLinks) {
+          items.push({ content: "Disconnect Links", callback: () => {
+            this.disconnectOutput(slotIndex);
+          }});
+        }
+        items.push({ content: "Rename Slot", callback: () => {
+          const current = outputSlot.label || outputSlot.name;
+          const newLabel = prompt("Slot name:", current);
+          if (newLabel !== null && newLabel.trim() !== "") {
+            outputSlot.label = newLabel.trim();
+            this.setDirtyCanvas(true, true);
+          }
+        }});
+
+        new LiteGraph.ContextMenu(items, { event: _lastMouseEvent, title: outputSlot.label || outputSlot.name });
+        return null;
+      }
+
       return _getSlotMenuOptions?.call(this, slot) ?? null;
     };
 

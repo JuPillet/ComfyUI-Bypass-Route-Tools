@@ -21,7 +21,7 @@ class BypassRouteController:
 		}
 
 	RETURN_TYPES = ("INT",)
-	RETURN_NAMES = ("selected_index",)
+	RETURN_NAMES = ("selected index",)
 	FUNCTION = "execute"
 	CATEGORY = "Bypass Route Tools"
 	TITLE = "Bypass Route Controller"
