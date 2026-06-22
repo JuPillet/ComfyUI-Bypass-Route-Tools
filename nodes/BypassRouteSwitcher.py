@@ -16,7 +16,7 @@ class BypassRouteSwitcher:
 			}
 		}
 
-	RETURN_TYPES = ("ANY",)
+	RETURN_TYPES = ("*",)
 	RETURN_NAMES = ("output",)
 	FUNCTION = "route"
 	CATEGORY = "Bypass Route Tools"
