@@ -8,7 +8,7 @@ NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 WEB_DIRECTORY = "./js"
 
-print("--- Loading BypassRouteTools nodes ---")
+print("--- Loading MultiRouteTools nodes ---")
 
 for filename in os.listdir(NODE_DIR):
 	if filename.endswith(".py"):

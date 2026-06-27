@@ -63,7 +63,7 @@ function resizeToFitContent(node) {
 // ─── ComfyUI Extension ────────────────────────────────────────────────────────
 
 app.registerExtension({
-    name: `BypassRouteTools.${NODE_NAME}`,
+    name: `MultiRouteTools.${NODE_NAME}`,
 
     setup() {
         // The Controller broadcasts this event the instant its own title

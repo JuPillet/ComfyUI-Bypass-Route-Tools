@@ -23,7 +23,7 @@ class BypassRouteController:
 	RETURN_TYPES = ("INT",)
 	RETURN_NAMES = ("selected index",)
 	FUNCTION = "execute"
-	CATEGORY = "Bypass Route Tools"
+	CATEGORY = "Multi Route Tools"
 	TITLE = "Bypass Route Controller"
 
 	def execute(self, active_index: int, inverted: bool, unique_id: str = None, extra_pnginfo: dict = None) -> Tuple[int]:

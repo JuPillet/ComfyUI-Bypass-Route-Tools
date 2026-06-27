@@ -19,7 +19,7 @@ class BypassRouteSwitcher:
 	RETURN_TYPES = ("*",)
 	RETURN_NAMES = ("output",)
 	FUNCTION = "route"
-	CATEGORY = "Bypass Route Tools"
+	CATEGORY = "Multi Route Tools"
 	TITLE = "Bypass Route Switcher"
 
 	def route(self, controller: str, index: int, **kwargs) -> Tuple[Any]:

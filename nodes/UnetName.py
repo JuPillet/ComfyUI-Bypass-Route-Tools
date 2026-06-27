@@ -23,7 +23,7 @@ class UNetNames:
 	RETURN_TYPES = ("STRING",)
 	RETURN_NAMES = ("unet_name",)
 	FUNCTION = "get_name"
-	CATEGORY = "Bypass Route Tools"
+	CATEGORY = "Multi Route Tools"
 	TITLE = "UNet Names"
 
 	def get_name(self, unet_name: str) -> Tuple[str]:

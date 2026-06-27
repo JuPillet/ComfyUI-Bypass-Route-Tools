@@ -1,4 +1,4 @@
-# Bypass Route Tools - Custom Nodes for ComfyUI
+# Multi Route Tools - Custom Nodes for ComfyUI
 
 ## Introduction
 ENGLISH :
@@ -122,7 +122,7 @@ ENGLISH :
 - To install these nodes, place the entire package into a dedicated subdirectory inside your ComfyUI `custom_nodes` directory. Python node definitions must reside inside a `nodes` subfolder, and the JavaScript front-end extensions inside a `js` folder. The `__init__.py` at the root automatically discovers and loads all Python files present in `nodes/`.
 - The recommended file layout should look like this:
 ```
-custom_nodes/ComfyUI-BypassRouteController/
+custom_nodes/ComfyUI-Multi-Route-Tools/
 ├── __init__.py
 ├── nodes/
 │   ├── BypassRouteController.py
@@ -137,7 +137,7 @@ FRANÇAIS :
 - Pour installer ces nœuds, placez l'ensemble du package dans un sous-répertoire dédié à l'intérieur de votre dossier `custom_nodes` de ComfyUI. Les définitions Python des nœuds doivent se trouver dans un sous-dossier `nodes`, et les extensions front-end JavaScript dans un dossier `js`. Le fichier `__init__.py` à la racine découvre et charge automatiquement tous les fichiers Python présents dans `nodes/`.
 - La disposition recommandée des fichiers doit ressembler à ceci :
 ```
-custom_nodes/ComfyUI-BypassRouteController/
+custom_nodes/ComfyUI-Multi-Route-Tools/
 ├── __init__.py
 ├── nodes/
 │   ├── BypassRouteController.py
@@ -150,14 +150,14 @@ custom_nodes/ComfyUI-BypassRouteController/
 
 ### Usage Tips / Conseils d'utilisation
 ENGLISH :
-- After restarting ComfyUI, right-click anywhere on the canvas and search for **Bypass Route Controller**, **Bypass Route Switcher**, or **UNet Names** under the `Bypass Route Tools` category menu.
+- After restarting ComfyUI, right-click anywhere on the canvas and search for **Bypass Route Controller**, **Bypass Route Switcher**, or **UNet Names** under the `Multi Route Tools` category menu.
 - Click **"➕ New Group"** on the Controller to create a new branch, then click **"➕ Add Node"** under that group to attach any canvas node to it (a searchable picker lets you filter by node title or ID). A group's row shows **Bypass** or **Active** depending on whether it's the currently selected branch.
 - To rename a group, click its name on the left side of the row, double-click anywhere on the row, or right-click it and choose **Rename** — the name becomes an editable field directly on the canvas. Press **Enter** to confirm or **Escape** to cancel.
 - Right-click any group's row to open the context menu, which provides four actions: **Rename**, **Move Up** and **Move Down** to reorder the branches, and **Remove group** to safely detach all its nodes and restore them to their active state (unless they're still used by another group). To remove a single node from a group instead, click the **×** next to its name in that group's node list.
 - To route data with the Switcher, select a Controller from its dropdown, then connect each `input_N` slot (one per group) to the matching data source for that branch. For fully automated routing, wire the Controller's `selected_index` output directly into the Switcher's `index` input.
 
 FRANÇAIS :
-- Après avoir redémarré ComfyUI, faites un clic droit n'importe où sur le canevas et recherchez **Bypass Route Controller**, **Bypass Route Switcher** ou **UNet Names** sous le menu de la catégorie `Bypass Route Tools`.
+- Après avoir redémarré ComfyUI, faites un clic droit n'importe où sur le canevas et recherchez **Bypass Route Controller**, **Bypass Route Switcher** ou **UNet Names** sous le menu de la catégorie `Multi Route Tools`.
 - Cliquez sur **"➕ New Group"** sur le Controller pour créer une nouvelle branche, puis cliquez sur **"➕ Add Node"** sous ce groupe pour y rattacher n'importe quel nœud du canevas (un sélecteur avec recherche permet de filtrer par titre ou ID de nœud). La ligne d'un groupe affiche **Bypass** ou **Active** selon qu'il s'agit ou non de la branche actuellement sélectionnée.
 - Pour renommer un groupe, cliquez sur son nom sur la partie gauche de la ligne, double-cliquez n'importe où sur la ligne, ou faites un clic droit dessus et choisissez **Rename** — le nom devient un champ éditable directement sur le canevas. Appuyez sur **Entrée** pour valider ou sur **Échap** pour annuler.
 - Faites un clic droit sur la ligne d'un groupe pour ouvrir le menu contextuel, qui propose quatre actions : **Rename**, **Move Up** et **Move Down** pour réordonner les branches, et **Remove group** pour détacher en toute sécurité tous ses nœuds et les restaurer dans leur état actif (sauf s'ils sont encore utilisés par un autre groupe). Pour retirer un seul nœud d'un groupe, cliquez sur le **×** à côté de son nom dans la liste de ce groupe.

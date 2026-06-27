@@ -619,7 +619,7 @@ function showAddNodeToGroupMenu(controllerNode, groupIdx, event) {
 // COMFYUI EXTENSION
 // ============================================================================
 app.registerExtension({
-  name: `BypassRouteTools.${NODE_NAME}`,
+  name: `MultiRouteTools.${NODE_NAME}`,
 
   setup() {
     const _onNodeRemoved = app.graph.onNodeRemoved;
